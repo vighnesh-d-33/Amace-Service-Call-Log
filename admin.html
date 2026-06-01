@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amace Solutions – Admin: Service Log Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#d42020;--red2:#ff3e3e;--maroon:#7a2323;
+  --bg:#0c0c0c;--s1:#141414;--s2:#1c1c1c;--s3:#242424;
+  --border:rgba(212,32,32,0.2);--text:#f2eded;--muted:#8a7a7a;
+  --green:#27ae60;--yellow:#f39c12;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;
+  background-image:radial-gradient(ellipse 90% 50% at 50% -10%,rgba(180,20,20,0.12) 0%,transparent 65%);}
+
+header{display:flex;align-items:center;gap:18px;padding:18px 48px;
+  border-bottom:1px solid var(--border);background:rgba(12,10,10,.95);
+  backdrop-filter:blur(16px);position:sticky;top:0;z-index:100;}
+.logo-wrap{width:52px;height:52px;flex-shrink:0;filter:drop-shadow(0 0 12px rgba(212,32,32,.5))}
+.brand h1{font-family:'Rajdhani',sans-serif;font-size:1.45rem;font-weight:700;letter-spacing:2.5px;
+  text-transform:uppercase;background:linear-gradient(100deg,#ff4444,#d42020,#7a2323);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1;}
+.brand p{font-size:0.65rem;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:3px}
+.admin-badge{
+  margin-left:auto;
+  background:rgba(212,32,32,.15);border:1px solid rgba(212,32,32,.3);
+  color:var(--red2);font-family:'Rajdhani',sans-serif;font-size:.7rem;font-weight:700;
+  letter-spacing:2.5px;text-transform:uppercase;padding:5px 14px;border-radius:50px;
+}
+
+main{max-width:1200px;margin:40px auto 80px;padding:0 20px}
+
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:gap}
+.top-bar h2{font-family:'Rajdhani',sans-serif;font-size:1.7rem;font-weight:700;letter-spacing:3px;text-transform:uppercase}
+.top-bar h2 em{color:var(--red);font-style:normal}
+
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
+.search-box{
+  background:var(--s2);border:1.5px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;
+  padding:9px 14px;outline:none;width:260px;
+  transition:border-color .2s,box-shadow .2s;
+}
+.search-box:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(212,32,32,.12)}
+.search-box::placeholder{color:var(--muted)}
+.filter-sel{
+  background:var(--s2);border:1.5px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:'DM Sans',sans-serif;font-size:.88rem;
+  padding:9px 34px 9px 12px;outline:none;cursor:pointer;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='.5.5l5 5 5-5' stroke='%23d42020' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;
+  transition:border-color .2s;
+}
+.filter-sel:focus{border-color:var(--red)}
+.filter-sel option{background:#1a0a0a}
+
+.btn-refresh{
+  font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:#fff;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--maroon),var(--red));
+  border-radius:8px;padding:10px 22px;
+  box-shadow:0 3px 14px rgba(212,32,32,.3);
+  transition:transform .15s,box-shadow .15s;
+}
+.btn-refresh:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,32,32,.45)}
+.btn-export{
+  font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--green);border:1.5px solid var(--green);cursor:pointer;
+  background:rgba(39,174,96,.08);border-radius:8px;padding:10px 22px;
+  transition:background .2s,transform .15s;
+}
+.btn-export:hover{background:rgba(39,174,96,.15);transform:translateY(-1px)}
+
+/* STATS */
+.stats{display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+.stat{
+  background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:14px 20px;flex:1;min-width:140px;
+}
+.stat-val{font-family:'Rajdhani',sans-serif;font-size:1.9rem;font-weight:700;color:var(--red);line-height:1}
+.stat-lbl{font-size:.7rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+
+/* TABLE */
+.table-wrap{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+  box-shadow:0 8px 40px rgba(0,0,0,.45);
+}
+.table-wrap table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead{background:rgba(212,32,32,.1)}
+thead th{
+  padding:12px 14px;text-align:left;
+  font-family:'Rajdhani',sans-serif;font-size:.68rem;font-weight:700;
+  letter-spacing:3px;text-transform:uppercase;color:var(--red);
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+tbody tr{border-bottom:1px solid rgba(212,32,32,.07);transition:background .15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(212,32,32,.04)}
+tbody td{padding:11px 14px;color:var(--text);vertical-align:top;max-width:200px;word-wrap:break-word}
+tbody td.mono{font-family:monospace;font-size:.8rem;color:var(--muted)}
+.badge{
+  display:inline-block;padding:3px 9px;border-radius:50px;font-size:.7rem;font-weight:600;
+  letter-spacing:.5px;white-space:nowrap;
+}
+.badge-open{background:rgba(243,156,18,.15);color:var(--yellow);border:1px solid rgba(243,156,18,.3)}
+.badge-closed{background:rgba(39,174,96,.12);color:var(--green);border:1px solid rgba(39,174,96,.25)}
+
+/* EMPTY / LOADING */
+.center-msg{text-align:center;padding:64px 20px;color:var(--muted)}
+.center-msg .icon{font-size:2.5rem;margin-bottom:14px;opacity:.5}
+.center-msg p{font-size:.88rem;line-height:1.7}
+.loader{width:36px;height:36px;border:3px solid rgba(212,32,32,.2);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* CONFIG BANNER */
+.config-banner{
+  background:rgba(243,156,18,.07);border:1.5px solid rgba(243,156,18,.3);
+  border-radius:10px;padding:16px 20px;margin-bottom:24px;
+  display:flex;gap:12px;align-items:flex-start;
+}
+.config-banner .icon{font-size:1.2rem;flex-shrink:0;margin-top:1px}
+.config-banner p{font-size:.83rem;color:#f3c06b;line-height:1.6}
+.config-banner code{background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px;font-size:.8rem}
+
+@media(max-width:768px){
+  header{padding:14px 18px}
+  main{padding:0 14px;margin-top:28px}
+  .controls{gap:9px}
+  .search-box{width:100%}
+  .table-wrap{overflow-x:auto}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="qg2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ff5555"/><stop offset="100%" stop-color="#c01010"/>
+        </linearGradient>
+        <linearGradient id="ag2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#8a3030"/><stop offset="100%" stop-color="#4a1515"/>
+        </linearGradient>
+        <filter id="sh2"><feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.5"/></filter>
+      </defs>
+      <g filter="url(#sh2)">
+        <path d="M10 42 C10 18 30 8 52 8 C74 8 88 22 88 44 C88 62 76 76 58 80 L52 92 L46 80 C26 76 10 62 10 42 Z" fill="url(#qg2)" opacity="0.95"/>
+        <circle cx="50" cy="42" r="18" fill="#0c0c0c" opacity="0.9"/>
+        <path d="M10 42 L14 50 C14 68 28 80 46 82 L52 92 L46 80 C26 76 10 62 10 42 Z" fill="#8a1515" opacity="0.7"/>
+      </g>
+      <g filter="url(#sh2)" opacity="0.92">
+        <path d="M62 15 C74 15 100 28 104 52 C108 72 96 95 78 102 L72 115 L68 102 C54 100 44 88 44 74 C44 56 56 44 62 15 Z" fill="url(#ag2)"/>
+        <ellipse cx="76" cy="62" rx="14" ry="16" fill="#0c0c0c" opacity="0.85"/>
+        <path d="M104 52 L108 60 C112 80 100 103 82 110 L78 102 C96 95 108 72 104 52 Z" fill="#2a0808" opacity="0.7"/>
+      </g>
+    </svg>
+  </div>
+  <div class="brand">
+    <h1>Amace Solutions Pvt. Ltd.</h1>
+    <p>Service Log — Admin Viewer</p>
+  </div>
+  <div class="admin-badge">Admin Panel</div>
+</header>
+
+<main>
+  <div class="top-bar">
+    <h2>All <em>Service</em> Records</h2>
+  </div>
+
+  <div class="config-banner" id="configBanner">
+    <span class="icon">⚙️</span>
+    <p>
+      <strong>Setup required:</strong> Open <code>admin.html</code> and set <code>APPS_SCRIPT_URL</code> to your Google Apps Script Web App URL. 
+      Once connected, this page will fetch and display all submitted records live from Google Sheets.
+      See the <code>SETUP_GUIDE.txt</code> included in the package for step-by-step instructions.
+    </p>
+  </div>
+
+  <div class="stats" id="statsRow">
+    <div class="stat"><div class="stat-val" id="statTotal">–</div><div class="stat-lbl">Total Records</div></div>
+    <div class="stat"><div class="stat-val" id="statOpen">–</div><div class="stat-lbl">Open Cases</div></div>
+    <div class="stat"><div class="stat-val" id="statClosed">–</div><div class="stat-lbl">Closed Cases</div></div>
+    <div class="stat"><div class="stat-val" id="statToday">–</div><div class="stat-lbl">Today</div></div>
+  </div>
+
+  <div class="controls">
+    <input class="search-box" type="text" id="searchBox" placeholder="Search customer, serial, engineer…" oninput="applyFilters()">
+    <select class="filter-sel" id="filterModel" onchange="applyFilters()">
+      <option value="">All Models</option>
+      <option>STLR 120</option><option>STLR 180</option><option>STLR 220</option><option>STLR 400</option>
+    </select>
+    <select class="filter-sel" id="filterStatus" onchange="applyFilters()">
+      <option value="">All Status</option>
+      <option value="open">Open</option>
+      <option value="closed">Closed</option>
+    </select>
+    <button class="btn-refresh" onclick="loadData()">↻ Refresh</button>
+    <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+  </div>
+
+  <div class="table-wrap">
+    <div id="tableContainer">
+      <div class="center-msg">
+        <div class="loader"></div>
+        <p>Loading records…</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ─── CONFIGURATION ────────────────────────────────────
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyW-SA0ioAf7uvBfv5RUfAMTKKG5-urhLOKVj41O1ApT9V2oHec20NSC_xXi29R3Bhplg/exec";
+// ──────────────────────────────────────────────────────
+
+let allRecords = [];
+
+const COLS = [
+  {key:'timestamp',   label:'Timestamp'},
+  {key:'customerName',label:'Customer Name'},
+  {key:'machineModel',label:'Model'},
+  {key:'machineSerial',label:'Serial No'},
+  {key:'dateReport',  label:'Date of Report'},
+  {key:'attendedBy',  label:'Attended By'},
+  {key:'natureIssue', label:'Nature of Issue'},
+  {key:'issueDesc',   label:'Description'},
+  {key:'actionsTaken',label:'Actions Taken'},
+  {key:'dateClosure', label:'Closure Date'},
+];
+
+function todayStr(){
+  return new Date().toISOString().slice(0,10);
+}
+
+function updateStats(records){
+  const today = todayStr();
+  document.getElementById('statTotal').textContent = records.length;
+  document.getElementById('statOpen').textContent = records.filter(r => !r.dateClosure).length;
+  document.getElementById('statClosed').textContent = records.filter(r => !!r.dateClosure).length;
+  document.getElementById('statToday').textContent = records.filter(r => (r.dateReport||'').slice(0,10) === today).length;
+}
+
+function renderTable(records){
+  if(!records.length){
+    document.getElementById('tableContainer').innerHTML =
+      `<div class="center-msg"><div class="icon">📋</div><p>No records found.</p></div>`;
+    return;
+  }
+  let html = `<table><thead><tr>
+    <th>#</th>
+    ${COLS.map(c=>`<th>${c.label}</th>`).join('')}
+    <th>Status</th>
+  </tr></thead><tbody>`;
+  records.forEach((r,i) => {
+    const closed = !!r.dateClosure;
+    html += `<tr>
+      <td class="mono">${i+1}</td>
+      ${COLS.map(c => {
+        let v = r[c.key] || '–';
+        if(c.key==='issueDesc'||c.key==='actionsTaken'){
+          v = `<span title="${(r[c.key]||'').replace(/"/g,'&quot;')}" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">${v}</span>`;
+        }
+        return `<td>${v}</td>`;
+      }).join('')}
+      <td><span class="badge ${closed?'badge-closed':'badge-open'}">${closed?'Closed':'Open'}</span></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('tableContainer').innerHTML = html;
+}
+
+function applyFilters(){
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  const model = document.getElementById('filterModel').value;
+  const status = document.getElementById('filterStatus').value;
+  let filtered = allRecords.filter(r => {
+    const text = Object.values(r).join(' ').toLowerCase();
+    const matchQ = !q || text.includes(q);
+    const matchM = !model || r.machineModel === model;
+    const matchS = !status ||
+      (status==='open' && !r.dateClosure) ||
+      (status==='closed' && !!r.dateClosure);
+    return matchQ && matchM && matchS;
+  });
+  renderTable(filtered);
+}
+
+function exportCSV(){
+  if(!allRecords.length){ alert('No data to export.'); return; }
+  const headers = ['#', ...COLS.map(c=>c.label), 'Status'];
+  const rows = allRecords.map((r,i) => [
+    i+1,
+    ...COLS.map(c => `"${(r[c.key]||'').replace(/"/g,'""')}"`),
+    r.dateClosure ? 'Closed' : 'Open'
+  ]);
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'Amace_Service_Logs_' + todayStr() + '.csv';
+  a.click();
+}
+
+async function loadData(){
+  document.getElementById('tableContainer').innerHTML =
+    `<div class="center-msg"><div class="loader"></div><p>Fetching records…</p></div>`;
+
+  if(APPS_SCRIPT_URL === "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE"){
+    // Demo data
+    allRecords = [
+      {timestamp:'01/06/2026, 10:23:00',customerName:'Precision Lasers Ltd.',machineModel:'STLR 220',machineSerial:'SN-20241001',dateReport:'2026-06-01',attendedBy:'Dhinesh KS',natureIssue:'Optics',issueDesc:'Beam alignment drift noticed during operation.',actionsTaken:'Realigned beam path and recalibrated mirrors.',dateClosure:'2026-06-02'},
+      {timestamp:'01/06/2026, 14:05:00',customerName:'TechFab Industries',machineModel:'STLR 400',machineSerial:'SN-20240512',dateReport:'2026-06-01',attendedBy:'Pavan Kumar',natureIssue:'Electrical & Electronics',issueDesc:'Power fluctuation causing random shutdowns.',actionsTaken:'Replaced faulty capacitor in control board.',dateClosure:''},
+      {timestamp:'31/05/2026, 09:10:00',customerName:'Metaform Pvt Ltd',machineModel:'STLR 120',machineSerial:'SN-20231108',dateReport:'2026-05-31',attendedBy:'Hemanth',natureIssue:'Software',issueDesc:'Firmware update failed, machine stuck in boot loop.',actionsTaken:'Rolled back to previous firmware version successfully.',dateClosure:'2026-05-31'},
+    ];
+    document.getElementById('configBanner').style.display = 'flex';
+    updateStats(allRecords);
+    applyFilters();
+    return;
+  }
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?action=getAll');
+    const data = await res.json();
+    allRecords = data.records || [];
+    document.getElementById('configBanner').style.display = 'none';
+    updateStats(allRecords);
+    applyFilters();
+  } catch(err){
+    document.getElementById('tableContainer').innerHTML =
+      `<div class="center-msg"><div class="icon">⚠️</div><p>Failed to load records.<br>Check your Apps Script URL and CORS settings.</p></div>`;
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
